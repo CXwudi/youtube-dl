@@ -127,6 +127,8 @@ from .expressen import ExpressenIE
 from .zype import ZypeIE
 from .odnoklassniki import OdnoklassnikiIE
 from .kinja import KinjaEmbedIE
+from .arcpublishing import ArcPublishingIE
+from .medialaan import MedialaanIE
 
 
 class GenericIE(InfoExtractor):
@@ -2208,6 +2210,34 @@ class GenericIE(InfoExtractor):
                 'uploader': 'OTT Videos',
             },
         },
+        {
+            # ArcPublishing PoWa video player
+            'url': 'https://www.adn.com/politics/2020/11/02/video-senate-candidates-campaign-in-anchorage-on-eve-of-election-day/',
+            'md5': 'b03b2fac8680e1e5a7cc81a5c27e71b3',
+            'info_dict': {
+                'id': '8c99cb6e-b29c-4bc9-9173-7bf9979225ab',
+                'ext': 'mp4',
+                'title': 'Senate candidates wave to voters on Anchorage streets',
+                'description': 'md5:91f51a6511f090617353dc720318b20e',
+                'timestamp': 1604378735,
+                'upload_date': '20201103',
+                'duration': 1581,
+            },
+        },
+        {
+            # MyChannels SDK embed
+            # https://www.24kitchen.nl/populair/deskundige-dit-waarom-sommigen-gevoelig-zijn-voor-voedselallergieen
+            'url': 'https://www.demorgen.be/nieuws/burgemeester-rotterdam-richt-zich-in-videoboodschap-tot-relschoppers-voelt-het-goed~b0bcfd741/',
+            'md5': '90c0699c37006ef18e198c032d81739c',
+            'info_dict': {
+                'id': '194165',
+                'ext': 'mp4',
+                'title': 'Burgemeester Aboutaleb spreekt relschoppers toe',
+                'timestamp': 1611740340,
+                'upload_date': '20210127',
+                'duration': 159,
+            },
+        },
     ]
 
     def report_following_redirect(self, new_url):
@@ -2447,6 +2477,9 @@ class GenericIE(InfoExtractor):
         webpage = self._webpage_read_content(
             full_response, url, video_id, prefix=first_bytes)
 
+        if '<title>DPG Media Privacy Gate</title>' in webpage:
+            webpage = self._download_webpage(url, video_id)
+
         self.report_extraction(video_id)
 
         # Is it an RSS feed, a SMIL file, an XSPF playlist or a MPD manifest?
@@ -2573,6 +2606,15 @@ class GenericIE(InfoExtractor):
         tp_urls = ThePlatformIE._extract_urls(webpage)
         if tp_urls:
             return self.playlist_from_matches(tp_urls, video_id, video_title, ie='ThePlatform')
+
+        arc_urls = ArcPublishingIE._extract_urls(webpage)
+        if arc_urls:
+            return self.playlist_from_matches(arc_urls, video_id, video_title, ie=ArcPublishingIE.ie_key())
+
+        mychannels_urls = MedialaanIE._extract_urls(webpage)
+        if mychannels_urls:
+            return self.playlist_from_matches(
+                mychannels_urls, video_id, video_title, ie=MedialaanIE.ie_key())
 
         # Look for embedded rtl.nl player
         matches = re.findall(
